@@ -96,7 +96,7 @@ extension StravaClient: ASWebAuthenticationPresentationContextProviding {
         let appAuthorizationUrl = Router.appAuthorizationUrl
         if UIApplication.shared.canOpenURL(appAuthorizationUrl) {
             currentAuthorizationHandler = result    // Stores the handler to be executed once `handleAuthorizationRedirect(url:)` is called
-            UIApplication.shared.openURL(appAuthorizationUrl)
+            UIApplication.shared.open(appAuthorizationUrl, options: [:])
         } else {
             let webAuthenticationSession = ASWebAuthenticationSession(url: Router.webAuthorizationUrl,
                                                                       callbackURLScheme: config?.redirectUri.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? "",
