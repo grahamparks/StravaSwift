@@ -208,9 +208,9 @@ extension StravaClient {
 
 extension StravaClient {
 
-    public func upload<T: Strava>(_ route: Router, upload: UploadData, result: @escaping (((T)?) -> Void), failure: @escaping (NSError) -> Void) {
+    public func upload<T: Strava>(_ route: Router, upload: UploadData, uploadProgress: ((Float) -> ())?, result: @escaping (((T)?) -> Void), failure: @escaping (NSError) -> Void) {
         do {
-            try oauthUpload(URLRequest: route.asURLRequest(), upload: upload) { (response: DataResponse<T>) in
+            try oauthUpload(URLRequest: route.asURLRequest(), upload: upload, uploadProgress: uploadProgress) { (response: DataResponse<T>) in
                 if let statusCode = response.response?.statusCode, (400..<500).contains(statusCode) {
                     failure(self.generateError(failureReason: "Strava API Error", response: response.response))
                 } else {
@@ -276,7 +276,7 @@ extension StravaClient {
 }
 
 extension StravaClient {
-
+    
     fileprivate func isConfigured() -> (Bool) {
         return config != nil
     }
@@ -293,10 +293,12 @@ extension StravaClient {
         return Alamofire.request(urlRequest)
     }
 
-    fileprivate func oauthUpload<T: Strava>(URLRequest: URLRequestConvertible, upload: UploadData, completion: @escaping (DataResponse<T>) -> ()) {
+    fileprivate func oauthUpload<T: Strava>(URLRequest: URLRequestConvertible, upload: UploadData, uploadProgress: ((Float) -> ())?, completion: @escaping (DataResponse<T>) -> ()) {
         checkConfiguration()
 
         guard let url = try? URLRequest.asURLRequest() else { return }
+
+        var uploadProgressTimer : Timer? = nil
 
         Alamofire.upload(multipartFormData: { multipartFormData in
             multipartFormData.append(upload.file, withName: "file", fileName: "\(upload.name ?? "default").\(upload.dataType)", mimeType: "octet/stream")
@@ -308,10 +310,18 @@ extension StravaClient {
         }, usingThreshold: SessionManager.multipartFormDataEncodingMemoryThreshold, with: url) { encodingResult in
             switch encodingResult {
             case .success(let upload, _, _):
+                if (uploadProgress != nil) {
+                    uploadProgressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true, block: { _ in
+                        uploadProgress?(Float(upload.uploadProgress.fractionCompleted));
+                    })
+                }
+
                 upload.responseStrava { (response: DataResponse<T>) in
+                    uploadProgressTimer?.invalidate()
                     completion(response)
                 }
             case .failure(let encodingError):
+                uploadProgressTimer?.invalidate();
                 print(encodingError)
             }
         }
