@@ -14,6 +14,9 @@ OAuthToken which is required for requesting Strava resources
  **/
 public struct OAuthToken: Strava {
 
+    /** The original JSON from Strava, for serialization **/
+    public let rawJSON: JSON?
+
     /** The access token **/
     public let accessToken: String?
 
@@ -32,6 +35,7 @@ public struct OAuthToken: Strava {
      - Parameter json: A SwiftyJSON object
      **/
     public init(_ json: JSON) {
+        rawJSON = json
         accessToken = json["access_token"].string
         refreshToken = json["refresh_token"].string
         expiresAt = json["expires_at"].int
@@ -39,6 +43,7 @@ public struct OAuthToken: Strava {
     }
 
     public init(access: String?, refresh: String?, expiry: Int?) {
+        self.rawJSON = nil
         self.accessToken = access
         self.refreshToken = refresh
         self.expiresAt = expiry
