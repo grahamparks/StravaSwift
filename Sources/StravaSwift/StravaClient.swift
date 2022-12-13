@@ -153,8 +153,6 @@ extension StravaClient: ASWebAuthenticationPresentationContextProviding {
     
     
     // ASWebAuthenticationPresentationContextProviding
-
-    @available(iOS 12.0, *)
     public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
         return currentWindow ?? ASPresentationAnchor()
     }
