@@ -96,31 +96,22 @@ extension StravaClient: ASWebAuthenticationPresentationContextProviding {
         let appAuthorizationUrl = Router.appAuthorizationUrl
         if UIApplication.shared.canOpenURL(appAuthorizationUrl) {
             currentAuthorizationHandler = result    // Stores the handler to be executed once `handleAuthorizationRedirect(url:)` is called
-            if #available(iOS 10.0, *) {
-                UIApplication.shared.open(appAuthorizationUrl, options: [:])
-            } else {
-                UIApplication.shared.openURL(appAuthorizationUrl)
-            }
+            UIApplication.shared.openURL(appAuthorizationUrl)
         } else {
-            if #available(iOS 12.0, *) {
-                let webAuthenticationSession = ASWebAuthenticationSession(url: Router.webAuthorizationUrl,
-                                                                          callbackURLScheme: config?.redirectUri.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? "",
-                                                                          completionHandler: { (url, error) in
-                    if let url = url, error == nil {
-                        self.handleAuthorizationRedirect(url, result: result)
-                    } else {
-                        result(.failure(error!))
-                    }
-                })
-                authSession = webAuthenticationSession
-                if #available(iOS 13.0, *) {
-                    webAuthenticationSession.presentationContextProvider = self
+            let webAuthenticationSession = ASWebAuthenticationSession(url: Router.webAuthorizationUrl,
+                                                                      callbackURLScheme: config?.redirectUri.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? "",
+                                                                      completionHandler: { (url, error) in
+                if let url = url, error == nil {
+                    self.handleAuthorizationRedirect(url, result: result)
+                } else {
+                    result(.failure(error!))
                 }
-                webAuthenticationSession.start()
-            } else {
-                currentAuthorizationHandler = result    // Stores the handler to be executed once `handleAuthorizationRedirect(url:)` is called
-                UIApplication.shared.open(Router.webAuthorizationUrl, options: [:])
+            })
+            authSession = webAuthenticationSession
+            if #available(iOS 13.0, *) {
+                webAuthenticationSession.presentationContextProvider = self
             }
+            webAuthenticationSession.start()
         }
     }
 
